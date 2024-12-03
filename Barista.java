@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 public class Barista {
     private final static int port = 2610;
-    private static HashMap<String,String> customersHM = new HashMap<>();
+    private static HashMap<String,String> customers = new HashMap<>(); //HashMap to keep track of clients and their activity
 
     public static void main(String[] args)
     {
@@ -27,10 +27,10 @@ public class Barista {
                 Socket socket = serverSocket.accept();
 
                 //Add customer to the hashmap
-                customersHM.put(Integer.toString(socket.getPort()),"idle");
+                customers.put(Integer.toString(socket.getPort()),"IDLE");
 
                 //Start thread to handle the customer
-                new Thread(new CustomerHandler(socket,customersHM)).start();
+                new Thread(new CustomerHandler(socket,customers)).start();
             }
 
         }catch (IOException e) {

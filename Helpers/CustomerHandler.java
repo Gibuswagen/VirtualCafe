@@ -9,18 +9,19 @@ public class CustomerHandler implements Runnable
 {
     private final Socket socket;
     private Cafe cafe;
-    private HashMap<String, String> customersHM = new HashMap<>();
+    private HashMap<String, String> customers = new HashMap<>();
 
     public CustomerHandler(Socket socket, HashMap<String, String> customersHM)
     {
         this.socket = socket;
-        this.customersHM = customersHM;
+        this.customers = customers;
     }
+
     @Override
     public void run()
     {
         String customerName = null;
-
+        String clientID = String.valueOf(socket.getPort()); //Use socket's port as an ID
         try
         {
             Scanner scanner = new Scanner(socket.getInputStream());
@@ -31,11 +32,52 @@ public class CustomerHandler implements Runnable
                 customerName = scanner.nextLine();
                 System.out.println(customerName + " walked into the cafe.");
 
+                customers.put(clientID,"IDLE");
+
+                //logCafeState():
+
+                //Send success response
+                writer.println("SUCCESS");
+
+                //DISPLAY CAFE STATUS HERE LATER
+
+
                 //Handle command requests from customer
                 while(true)
                 {
                     String request = scanner.nextLine().toLowerCase();
                     String[] parts = request.split(" ");
+
+                    switch(parts[0])
+                    {
+                        case "place_order":
+                            //Parse order details
+                            int teas = Integer.parseInt(parts[1]);
+                            int coffees = Integer.parseInt(parts[2]);
+
+                            //cafe.addOrder(clientID, customerName, teas, coffees);
+                            writer.println("Order placed for "+customerName+": " + teas + " tea(s), " + coffees + " coffee(s).");
+                            customers.put(clientID,"WAITING");
+                            //log
+                            break;
+
+                        case "order_status":
+                            //Check what is where for client
+                            break;
+
+                        case "collect":
+                            //Collection implementation
+                            break;
+
+                        case "exit":
+                            customers.remove(clientID);
+                            //logstate
+                            socket.close(); //Close socket
+                            break;
+
+                        default:
+                            throw new Exception("CustomerHandler received unknown request");
+                    }
 
                 }
 
@@ -47,6 +89,8 @@ public class CustomerHandler implements Runnable
 
         }catch (Exception e) {
         }finally {
+            customers.remove(clientID);
+            //logstate
             System.out.println("Customer " + customerName + " left.");
         }
 

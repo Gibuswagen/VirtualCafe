@@ -1,4 +1,6 @@
 package Helpers;
 
-public class Cafe {
+public class Cafe
+{
+
 }

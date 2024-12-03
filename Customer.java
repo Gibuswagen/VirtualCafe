@@ -9,8 +9,6 @@ import Helpers.CustomerConnection;
 public class Customer{
     private static final int port = 2610;
 
-
-
     public static void main(String[] args) {
         System.out.println("Welcome to the Virtual Cafe!");
 
@@ -43,23 +41,43 @@ public class Customer{
                                 //HANDLE STATUS COMMAND
                                 System.out.println("ORDER STATUS TRIGGERED");
                             }else{
-                                Pattern pattern = Pattern.compile("((\\d+) tea(?:s)?(?: and (\\d+) coffee(?:s)?)?|(\\d+) coffee(?:s)?(?: and (\\d+) tea(?:s)?)?)");
+                                Pattern pattern = Pattern.compile("((\\d+) tea(s)?(?: and (\\d+) coffee(s)?)?|(\\d+) coffee(s)?(?: and (\\d+) tea(s)?)?)");
                                 Matcher matcher = pattern.matcher(parts[1]);
-                                System.out.println(parts[1]);
+                                if(matcher.matches())
+                                {
+                                    // Extract tea and coffee counts
+                                    String teaCount = matcher.group(2) != null ? matcher.group(2) :
+                                            matcher.group(8) != null ? matcher.group(8) : "0";
 
+                                    String coffeeCount = matcher.group(6) != null ? matcher.group(6) :
+                                            matcher.group(4) != null ? matcher.group(4) : "0";
+
+
+                                    //Make CustomerConnection send an order request and get response
+                                    String response = customer.placeOrder(Integer.parseInt(teaCount),Integer.parseInt(coffeeCount));
+                                    System.out.println(response);
+
+                                }else{
+                                    System.out.println("Invalid order format! Please try again.");
+                                }
                             }
-
+                            break;
+                        case "collect":
+                            //Implement collection
+                            break;
+                        case "exit":
+                            customer.exitCafe();
+                            break;
+                        default:
+                            System.out.println("Invalid command syntax.");
+                            break;
                     }
 
-
                 }
-
-
 
             }catch (Exception e) {
                 System.out.println(e.getMessage());
             }
-
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
