@@ -57,7 +57,20 @@ public class CustomerHandler implements Runnable
                             int coffees = Integer.parseInt(parts[2]);
 
                             cafe.addOrder(clientID, customerName, teas, coffees);
-                            writer.println("Order placed for "+customerName+": " + teas + " tea(s), " + coffees + " coffee(s).");
+
+                            // Build the response message
+                            StringBuilder response = new StringBuilder("Order placed for " + customerName + ": ");
+                            if (teas > 0) {
+                                response.append(teas).append(" tea(s)");
+                            }
+                            if (coffees > 0) {
+                                if (teas > 0) {
+                                    response.append(" and "); // Add "and" if both teas and coffees are present
+                                }
+                                response.append(coffees).append(" coffee(s)");
+                            }
+
+                            writer.println(response);
                             customers.put(clientID,"WAITING");
                             //log
                             break;

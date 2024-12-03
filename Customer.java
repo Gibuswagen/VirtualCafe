@@ -41,23 +41,29 @@ public class Customer{
                                 //HANDLE STATUS COMMAND
                                 System.out.println("ORDER STATUS TRIGGERED");
                             }else{
-                                Pattern pattern = Pattern.compile("((\\d+) tea(s)?(?: and (\\d+) coffee(s)?)?|(\\d+) coffee(s)?(?: and (\\d+) tea(s)?)?)");
+                                Pattern pattern = Pattern.compile("(\\d+)\\s*(tea|teas|coffee|coffees)");
                                 Matcher matcher = pattern.matcher(parts[1]);
-                                if(matcher.matches())
-                                {
-                                    // Extract tea and coffee counts
-                                    String teaCount = matcher.group(2) != null ? matcher.group(2) :
-                                            matcher.group(8) != null ? matcher.group(8) : "0";
 
-                                    String coffeeCount = matcher.group(6) != null ? matcher.group(6) :
-                                            matcher.group(4) != null ? matcher.group(4) : "0";
+                                int teaCount = 0;
+                                int coffeeCount = 0;
 
+                                // Aggregate counts of teas and coffees
+                                while (matcher.find()) {
+                                    int count = Integer.parseInt(matcher.group(1));
+                                    String drinkType = matcher.group(2).toLowerCase();
 
-                                    //Make CustomerConnection send an order request and get response
-                                    String response = customer.placeOrder(Integer.parseInt(teaCount),Integer.parseInt(coffeeCount));
+                                    if (drinkType.startsWith("tea")) {
+                                        teaCount += count;
+                                    } else if (drinkType.startsWith("coffee")) {
+                                        coffeeCount += count;
+                                    }
+                                }
+
+                                if (teaCount > 0 || coffeeCount > 0) {
+                                    // Make CustomerConnection send an order request and get response
+                                    String response = customer.placeOrder(teaCount, coffeeCount);
                                     System.out.println(response);
-
-                                }else{
+                                } else{
                                     System.out.println("Invalid order format! Please try again.");
                                 }
                             }
