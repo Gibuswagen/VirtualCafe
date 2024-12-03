@@ -3,7 +3,7 @@ package Helpers;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Orders
+public class Order
 {
     private final int clientID;
     private final String customerName;
@@ -16,7 +16,7 @@ public class Orders
     private int totalCoffees;
 
 
-    public Orders(int clientID, String customerName, int teaCount, int coffeeCount)
+    public Order(int clientID, String customerName, int teaCount, int coffeeCount)
     {
         this.clientID = clientID;
         this.customerName = customerName;

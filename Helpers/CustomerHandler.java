@@ -9,11 +9,12 @@ public class CustomerHandler implements Runnable
 {
     private final Socket socket;
     private Cafe cafe;
-    private HashMap<String, String> customers = new HashMap<>();
+    private HashMap<String, String> customers;
 
-    public CustomerHandler(Socket socket, HashMap<String, String> customersHM)
+    public CustomerHandler(Socket socket, Cafe cafe,HashMap<String, String> customers)
     {
         this.socket = socket;
+        this.cafe = cafe;
         this.customers = customers;
     }
 
@@ -55,7 +56,7 @@ public class CustomerHandler implements Runnable
                             int teas = Integer.parseInt(parts[1]);
                             int coffees = Integer.parseInt(parts[2]);
 
-                            //cafe.addOrder(clientID, customerName, teas, coffees);
+                            cafe.addOrder(clientID, customerName, teas, coffees);
                             writer.println("Order placed for "+customerName+": " + teas + " tea(s), " + coffees + " coffee(s).");
                             customers.put(clientID,"WAITING");
                             //log

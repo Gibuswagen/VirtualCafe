@@ -1,3 +1,4 @@
+import Helpers.Cafe;
 import Helpers.CustomerHandler;
 
 import java.io.IOException;
@@ -7,7 +8,7 @@ import java.util.HashMap;
 
 public class Barista {
     private final static int port = 2610;
-    private static HashMap<String,String> customers = new HashMap<>(); //HashMap to keep track of clients and their activity
+    private static final HashMap<String,String> customers = new HashMap<>(); //HashMap to keep track of clients and their activity
 
     public static void main(String[] args)
     {
@@ -17,6 +18,7 @@ public class Barista {
     //Method to start server
     private static void OpenCafe()
     {
+        final Cafe cafe = new Cafe(customers);
         //Feed try argument with serverSocket
         try(ServerSocket serverSocket = new ServerSocket(port))
         {
@@ -30,7 +32,7 @@ public class Barista {
                 customers.put(Integer.toString(socket.getPort()),"IDLE");
 
                 //Start thread to handle the customer
-                new Thread(new CustomerHandler(socket,customers)).start();
+                new Thread(new CustomerHandler(socket,cafe,customers)).start();
             }
 
         }catch (IOException e) {
