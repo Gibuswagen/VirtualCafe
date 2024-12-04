@@ -1,13 +1,11 @@
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import Helpers.CustomerConnection;
 public class Customer{
-    private static final int port = 2610;
+    private static boolean normalExit = false; // Flag for normal exit
+    private static boolean serverAlive = true; // Flag to track server connection status
 
     public static void main(String[] args) {
         System.out.println("Welcome to the Virtual Cafe!");
@@ -20,13 +18,25 @@ public class Customer{
             Scanner input = new Scanner(System.in);
             String name = input.nextLine();
 
+
+            //Intercept and gracefully handle SIGINT
+            Runtime.getRuntime().addShutdownHook(new Thread(() ->
+            {
+                if (!normalExit) { // Only run this logic if it's not a normal exit
+                    System.out.println("*You decide to leave*");
+                }
+            }));
+
+
             //Try with resources to connect to the server and start ordering
             try (CustomerConnection customer = new CustomerConnection(name))
             {
+                customer.receiveBaristasMessages(() -> serverAlive = false);
                 String command = "";
-                while(!command.equals("exit"))
+                while(!command.equals("exit") && serverAlive) //Prompt input until exit or server connection is lost
                 {
                     System.out.println(name + ", what would you like to do?\n");
+
 
                     //Get command input
                     command = input.nextLine().toLowerCase();
@@ -61,8 +71,8 @@ public class Customer{
 
                                 if (teaCount > 0 || coffeeCount > 0) {
                                     // Make CustomerConnection send an order request and get response
-                                    String response = customer.placeOrder(teaCount, coffeeCount);
-                                    System.out.println(response);
+                                    customer.placeOrder(teaCount, coffeeCount);
+
                                 } else{
                                     System.out.println("Invalid order format! Please try again.");
                                 }
@@ -72,6 +82,8 @@ public class Customer{
                             //Implement collection
                             break;
                         case "exit":
+                            System.out.println("*You exit the cafe*");
+                            normalExit = true;
                             customer.exitCafe();
                             break;
                         default:
@@ -83,6 +95,9 @@ public class Customer{
 
             }catch (Exception e) {
                 System.out.println(e.getMessage());
+            }
+            if (!serverAlive){
+                System.out.println("Cafe has magically disappeared...");
             }
 
         } catch (Exception e) {

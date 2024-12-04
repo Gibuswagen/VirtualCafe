@@ -29,22 +29,38 @@ public class Cafe
         {
             activeOrders.compute(Integer.parseInt(clientID), (id, existingOrder) -> {
                 if (existingOrder != null) {
-                    // Add to the existing order
+
+                    // Add drinks to the existing order
                     existingOrder.AddOnTea(teas);
                     existingOrder.AddOnCoffee(coffees);
                     System.out.println("Updated order for " + customerName + ": " + teas + " tea(s), " + coffees + " coffee(s).");
+
+                    //Update waiting area drink count
+                    waitingTeas.addAndGet(teas);
+                    waitingCoffees.addAndGet(coffees);
+
+                    //Display change
                     cafeLogState();
                     return existingOrder;
                 } else {
                     // Create a new order
                     Order newOrder = new Order(Integer.parseInt(clientID), customerName, teas, coffees);
                     System.out.println("New order added for " + customerName + ": " + teas + " tea(s), " + coffees + " coffee(s).");
+
+                    //Update waiting area drink count
+                    waitingTeas.addAndGet(teas);
+                    waitingCoffees.addAndGet(coffees);
+
                     cafeLogState();
                     return newOrder;
                 }
             });
         }
     }
+
+    //public void processOrders()
+
+
 
     private void cafeLogState()
     {
