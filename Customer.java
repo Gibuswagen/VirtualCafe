@@ -39,10 +39,11 @@ public class Customer{
 
                 String command = "";
 
+                System.out.println("[Barista]: What would you like to do?");
+
                 while(!command.equals("exit") && serverAlive) //Prompt input until exit or server connection is lost
                 {
 
-                    System.out.println("[Barista]: What would you like to do?");
                     //Get command input
                     command = input.nextLine().toLowerCase();
 
