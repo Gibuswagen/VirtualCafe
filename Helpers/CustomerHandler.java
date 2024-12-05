@@ -10,6 +10,8 @@ public class CustomerHandler implements Runnable
     private final Socket socket;
     private Cafe cafe;
     private HashMap<String, String> customers;
+    private String customerName = null;
+    private volatile boolean isCheckingReady = false; // To track readiness-check status
 
     public CustomerHandler(Socket socket, Cafe cafe,HashMap<String, String> customers)
     {
@@ -21,7 +23,6 @@ public class CustomerHandler implements Runnable
     @Override
     public void run()
     {
-        String customerName = null;
         String clientID = String.valueOf(socket.getPort()); //Use socket's port as an ID
         try
         {
@@ -35,13 +36,8 @@ public class CustomerHandler implements Runnable
 
                 customers.put(clientID,"IDLE");
 
-                //logCafeState():
-
                 //Send success response
                 writer.println("SUCCESS");
-
-                //DISPLAY CAFE STATUS HERE LATER
-
 
                 //Handle command requests from customer
                 while(true)
@@ -72,21 +68,50 @@ public class CustomerHandler implements Runnable
 
                             writer.println(response);
                             customers.put(clientID,"WAITING");
-                            //log
                             break;
 
                         case "order_status":
-                            //Check what is where for client
+                            // Retrieve the active order for the customer
+                            Order order = cafe.getActiveOrder(Integer.parseInt(clientID));
+                            if (order != null) {
+                                writer.println(order.getOrderStatus());
+                            } else {
+                                writer.println("You currently have no active orders.");
+                            }
                             break;
 
                         case "collect":
-                            //Collection implementation
+                            if(cafe.isCollectable(clientID))
+                            {
+                                customers.put(clientID,"IDLE");
+                                writer.println("You have collected your order! Enjoy!");
+                            }else{
+                                writer.println("Your order is not ready yet! Please wait!");
+                            }
                             break;
 
                         case "exit":
-                            customers.remove(clientID);
-                            //logstate
-                            socket.close(); //Close socket
+                            try
+                            {
+                                // Check if the customer has an active order
+                                if (cafe.getActiveOrder(Integer.parseInt(clientID)) != null)
+                                {
+                                    //Cancel their order
+                                    //cafe.cancelOrder(clientID);
+                                }
+
+                                //Remove customer from the cafe
+                                customers.remove(clientID);
+
+                                writer.println("[Barista]: "+"Goodbye, "+customerName+"! Come again!");
+                                System.out.println(customerName + " has left the cafe.");
+
+                                socket.close(); //Close socket
+
+                            } catch (Exception e){
+                                System.out.println("Error during exit command: "+ e.getMessage());
+                            }
+
                             break;
 
                         default:
@@ -97,18 +122,39 @@ public class CustomerHandler implements Runnable
 
 
             }catch (Exception e){
-                writer.println("ERROR "+ e.getMessage());
+                System.out.println("ERROR "+ e.getMessage());
                 socket.close();
             }
 
         }catch (Exception e) {
+            System.out.println("ERROR "+ e.getMessage());
         }finally {
             customers.remove(clientID);
-            //logstate
             System.out.println("Customer " + customerName + " left.");
         }
-
-
     }
+    private void checkOrderReady(String clientID) {
+        if (isCheckingReady) return; // Prevent multiple threads for the same customer
 
+        isCheckingReady = true; // Mark as running
+
+        new Thread(() -> {
+            try {
+                while (true) {
+                    Thread.sleep(3000); // Poll every 3 seconds
+                    Order order = cafe.getActiveOrder(Integer.parseInt(clientID));
+                    if (order != null && order.isReady()) {
+                        PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                        writer.println(customerName + ", your order is ready to collect!");
+                        isCheckingReady = false; // Reset the flag
+                        break; // Exit loop once notification is sent
+                    }
+                }
+            } catch (InterruptedException | IOException e) {
+                System.out.println("Order readiness check interrupted for " + customerName);
+            } finally {
+                isCheckingReady = false; // Ensure flag is reset in case of errors
+            }
+        }).start();
+    }
 }

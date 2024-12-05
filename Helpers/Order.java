@@ -37,13 +37,13 @@ public class Order
     }
 
     //Getters
-    public int getClientID()
+    public int getTotalTeas()
     {
-        return clientID;
+        return totalTeas.get();
     }
-    public String getCustomerName()
+    public int getTotalCoffees()
     {
-        return customerName;
+        return totalCoffees.get();
     }
 
 
@@ -60,7 +60,7 @@ public class Order
     {
         for (int i = totalCoffees.get(); i < totalCoffees.get()+addNum; i++)
         {
-            coffees.put("Tea"+i,"WAITING");
+            coffees.put("Coffee"+i,"WAITING");
         }
         totalTeas.addAndGet(addNum);
     }
@@ -177,4 +177,5 @@ public class Order
     {
         return readyCount.get() == totalTeas.get() + totalCoffees.get();
     }
+
 }

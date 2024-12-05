@@ -2,17 +2,16 @@ package Helpers;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Cafe
 {
-    private final HashMap<String,String> customers;
-    private final Map<Integer,Order> activeOrders = new ConcurrentHashMap<>();
+    private final ExecutorService brewingPool = Executors.newFixedThreadPool(4); // Max 4 concurrent brewing tasks
+    private final HashMap<String,String> customers; // HashMap to keep track of customers and their state (IDLE, WAITING)
+    private final Map<Integer,Order> activeOrders = new ConcurrentHashMap<>(); // <clientID, Order>
 
-    private final BlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>(); // Queue for appropriate serving approach
 
     private static final int teaBrewTime = 30000; //30 seconds to brew tea
 
@@ -36,33 +35,34 @@ public class Cafe
         int clientIdInt = Integer.parseInt(clientID);
 
         synchronized (activeOrders) {
-            Order existingOrder = activeOrders.get(clientIdInt);
+            Order order = activeOrders.get(clientIdInt);
 
-            if (existingOrder != null) {
+            if (order != null) {
                 // Merge new items into the existing order
-                existingOrder.AddOnTea(teas);
-                existingOrder.AddOnCoffee(coffees);
+                order.AddOnTea(teas);
+                order.AddOnCoffee(coffees);
                 waitingTeas.addAndGet(teas);
                 waitingCoffees.addAndGet(coffees);
 
                 System.out.println("Extra ordered by " + customerName + ": " + teas + " tea(s), " + coffees + " coffee(s).");
 
+
             } else {
                 // Create a new order
-                existingOrder = new Order(clientIdInt, customerName, teas, coffees);
-                activeOrders.put(clientIdInt, existingOrder);
+                order = new Order(clientIdInt, customerName, teas, coffees);
+                activeOrders.put(clientIdInt, order);
                 waitingTeas.addAndGet(teas);
                 waitingCoffees.addAndGet(coffees);
 
                 System.out.println("New order place by " + customerName + ": " + teas + " tea(s), " + coffees + " coffee(s).");
             }
 
-            orderQueue.add(existingOrder); // Reference the same Order instance
+            orderQueue.add(order); // Reference the same Order instance
         }
         processOrders();
         cafeLogState();
-    }
 
+    }
 
     private void processOrders()
     {
@@ -97,7 +97,7 @@ public class Cafe
             }
             if(teaID != null)
             {
-                //startBrewingDrink(order, teaID, "Tea", teaBrewTime); // Brew the tea
+                startBrewingDrink(order, teaID, "Tea", teaBrewTime); // Brew the tea
                 waitingTeas.decrementAndGet();
             }
         }
@@ -116,15 +116,40 @@ public class Cafe
             }
             if(coffeeID != null)
             {
-                //startBrewingDrink(order, coffeeID, "Coffee", coffeeBrewTime); // Brew the coffee
-                waitingTeas.decrementAndGet();
+                startBrewingDrink(order, coffeeID, "Coffee", coffeeBrewTime); // Brew the coffee
+                waitingCoffees.decrementAndGet();
             }
         }
     }
 
+    private void startBrewingDrink(Order order, String drinkID, String drinkType, int brewTime)
+    {
+        brewingPool.submit(() ->{
+            try
+            {
+                // "Brew" a drink
+                Thread.sleep(brewTime);
 
-
-
+                // Update drink state to TRAY
+                synchronized (order)
+                {
+                    if("Tea".equals(drinkType))
+                    {
+                        order.updateTeaState(drinkID,"TRAY");
+                        brewingTeas.decrementAndGet();
+                    }
+                    else if ("Coffee".equals(drinkType))
+                    {
+                        order.updateCoffeeState(drinkID,"TRAY");
+                        brewingCoffees.decrementAndGet();
+                    }
+                }
+                cafeLogState();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
 
     private void cafeLogState()
     {
@@ -148,6 +173,35 @@ public class Cafe
         System.out.println(log);
 
 
+    }
+
+    public void shutdownCafe() {
+        brewingPool.shutdown();
+    }
+
+    public Order getActiveOrder(int clientID)
+    {
+        return activeOrders.get(clientID);
+    }
+
+    public boolean isCollectable(String clientID)
+    {
+        int ID = Integer.parseInt(clientID);
+        Order order = activeOrders.get(ID);
+
+        if (order != null && order.isReady())
+        {
+            //Remove order from activeOrders
+            activeOrders.remove(ID);
+
+            //Update drink counts in Tray area
+            trayTeas.addAndGet(-order.countTeasByState("TRAY"));
+            trayCoffees.addAndGet(-order.countCoffeesByState("TRAY"));
+
+            cafeLogState();
+            return true;
+        }
+        return false;
     }
 }
 

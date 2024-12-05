@@ -12,6 +12,7 @@ public class Barista {
 
     public static void main(String[] args)
     {
+
         OpenCafe();
     }
 
@@ -19,6 +20,11 @@ public class Barista {
     private static void OpenCafe()
     {
         final Cafe cafe = new Cafe(customers);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down cafe...");
+            cafe.shutdownCafe();
+        }));
         //Feed try argument with serverSocket
         try(ServerSocket serverSocket = new ServerSocket(port))
         {
