@@ -1,4 +1,4 @@
-package Helpers;
+package helpers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Order
 {
-    private final int clientID;
+    private final Object lock = new Object(); //Object lock
     private final String customerName;
     private final Map<String, String> teas; // Map of <TeaID> <State>
     private final Map<String, String> coffees; // Map of <CoffeeID> <State>
@@ -16,7 +16,6 @@ public class Order
 
     public Order(int clientID, String customerName, int teaCount, int coffeeCount)
     {
-        this.clientID = clientID;
         this.customerName = customerName;
         this.teas = new HashMap<>();
         this.coffees = new HashMap<>();
@@ -37,20 +36,39 @@ public class Order
     }
 
     //Getters
-    public int getTotalTeas()
+    public Map<String,String> getTotalTeas()
     {
-        return totalTeas.get();
+        return teas;
     }
-    public int getTotalCoffees()
+    public Map<String,String> getTotalCoffees()
     {
-        return totalCoffees.get();
+        return coffees;
+    }
+    public String getCustomerName()
+    {
+        return customerName;
+    }
+
+    public synchronized void markReady()
+    {
+        if(isReady())
+        {
+            synchronized (lock)
+            {
+                lock.notifyAll();
+            }
+        }
+    }
+    public Object getLock()
+    {
+        return lock;
     }
 
 
     //Methods to add extra to an order
     public void AddOnTea(int addNum)
     {
-        for (int i = totalCoffees.get(); i < totalCoffees.get()+addNum; i++)
+        for (int i = totalTeas.get(); i < totalTeas.get()+addNum; i++)
         {
             teas.put("Tea"+i,"WAITING");
         }
@@ -62,7 +80,7 @@ public class Order
         {
             coffees.put("Coffee"+i,"WAITING");
         }
-        totalTeas.addAndGet(addNum);
+        totalCoffees.addAndGet(addNum);
     }
 
 

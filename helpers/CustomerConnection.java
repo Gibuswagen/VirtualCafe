@@ -1,4 +1,4 @@
-package Helpers;
+package helpers;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,10 +24,12 @@ public class CustomerConnection implements AutoCloseable
             //Send customer name
             writer.println(name);
 
+
             //Parsing the response
             String response = reader.nextLine();
             if (response.trim().compareToIgnoreCase("success") != 0)
                 throw new Exception("Barista kicked you out after hearing your name...");
+
         }catch(IOException e){
             throw new Exception("Cafe magically disappeared...");
         }
@@ -62,8 +64,18 @@ public class CustomerConnection implements AutoCloseable
     {
         //Send request to place an Order
         writer.println("PLACE_ORDER "+teaCount+" "+coffeeCount);
+    }
 
-        System.out.println("request sent - PLACE_ORDER "+teaCount+" "+coffeeCount);
+    public void orderStatus()
+    {
+        //Send request to see order status
+        writer.println("ORDER_STATUS");
+    }
+
+    public void attemptCollection()
+    {
+        //Send request to collect an order
+        writer.println("COLLECT");
     }
 
     public void exitCafe()

@@ -2,7 +2,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import Helpers.CustomerConnection;
+import helpers.CustomerConnection;
 public class Customer{
     private static boolean normalExit = false; // Flag for normal exit
     private static boolean serverAlive = true; // Flag to track server connection status
@@ -27,17 +27,17 @@ public class Customer{
                 }
             }));
 
-
             //Try with resources to connect to the server and start ordering
             try (CustomerConnection customer = new CustomerConnection(name))
             {
                 customer.receiveBaristasMessages(() -> serverAlive = false);
+
                 String command = "";
+
                 while(!command.equals("exit") && serverAlive) //Prompt input until exit or server connection is lost
                 {
-                    System.out.println(name + ", what would you like to do?\n");
 
-
+                    System.out.println("What would you like to do?");
                     //Get command input
                     command = input.nextLine().toLowerCase();
 
@@ -48,8 +48,7 @@ public class Customer{
                         case "order":
                             if(parts.length > 1 && parts[1].equals("status"))
                             {
-                                //HANDLE STATUS COMMAND
-                                System.out.println("ORDER STATUS TRIGGERED");
+                                customer.orderStatus();
                             }else{
                                 Pattern pattern = Pattern.compile("(\\d+)\\s*(tea|teas|coffee|coffees)");
                                 Matcher matcher = pattern.matcher(parts[1]);
@@ -79,7 +78,7 @@ public class Customer{
                             }
                             break;
                         case "collect":
-                            //Implement collection
+                            customer.attemptCollection();
                             break;
                         case "exit":
                             System.out.println("*You exit the cafe*");
