@@ -5,6 +5,9 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Scanner;
 
+// Handles individual customer requests on the server side.
+// Parses commands, manages customer state, and interacts with the `Cafe` class.
+
 public class CustomerHandler implements Runnable
 {
     private final Socket socket;
@@ -54,6 +57,7 @@ public class CustomerHandler implements Runnable
         }
     }
 
+    // Processes customer commands (e.g., "place_order", "order_status", "collect").
     private void handleCommand(String request, PrintWriter writer, String clientID)
     {
         String[] parts = request.split(" ");
@@ -76,6 +80,8 @@ public class CustomerHandler implements Runnable
         }
     }
 
+    // VARIOUS COMMAND HANDLING METHODS
+    // Interacts with cafe and orders to build appropriate response
     private void handlePlaceOrder(String[] parts, PrintWriter writer, String clientID)
     {
         try
@@ -129,10 +135,16 @@ public class CustomerHandler implements Runnable
             customers.put(clientID,"IDLE");
             cafe.cafeLogState();
             writer.println("[Barista]: You have collected your order! Enjoy!");
-        } else{
+            System.out.println(customerName + " has collected his order.");
+        }
+        else if(cafe.getActiveOrder(Integer.parseInt(clientID)) == null)
+        {
+            writer.println("[Barista]: You didn't order yet!");
+        }
+        else
+        {
             writer.println("[Barista]: Your order is not ready yet! Please wait.");
         }
-
     }
 
     private void handleExit(PrintWriter writer, String clientID)
@@ -165,7 +177,9 @@ public class CustomerHandler implements Runnable
         System.out.println(customerName + " has left the cafe.");
     }
 
-    //Thread that notifies when is order has been fulfilled
+
+    // Runs a thread to monitor if a customer's order is ready.
+    // Notifies the customer as soon as the order is ready for collection.
     private void checkOrderReady(PrintWriter writer, String clientID) {
         if (isReadyCheckActive) return; // Prevent multiple threads for readiness check
 

@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+// Facilitates communication between a customer and the cafe server.
+
 public class CustomerConnection implements AutoCloseable
 {
     private boolean isNormalExit = false;
@@ -35,6 +37,7 @@ public class CustomerConnection implements AutoCloseable
         }
     }
 
+    // Listens for server messages and logs them in real-time to keep the client informed of status updates
     public void receiveBaristasMessages(Runnable onServerDisconnect) {
         new Thread(() -> {
             try {
@@ -42,13 +45,13 @@ public class CustomerConnection implements AutoCloseable
                     String message = reader.nextLine(); // Read message
                     System.out.println(message);
                 }
-                // If we exit the loop, check if it was a normal exit
+                // check if it was a normal exit
                 if (!isNormalExit) {
-                    onServerDisconnect.run();
+                    onServerDisconnect.run();//sets serverAlive = false
                 }
             } catch (Exception e) {
                 if (!isNormalExit) {
-                    onServerDisconnect.run();
+                    onServerDisconnect.run();//sets serverAlive = false
                 }
             } finally {
                 try {
@@ -60,6 +63,8 @@ public class CustomerConnection implements AutoCloseable
         }).start();
     }
 
+
+    //SET OF METHODS TO SEND REQUESTS
     public void placeOrder(int teaCount,int coffeeCount)
     {
         //Send request to place an Order

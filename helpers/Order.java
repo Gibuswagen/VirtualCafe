@@ -4,17 +4,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
+// Represents a customer's order.
+// Tracks the state of each drink (e.g., "WAITING", "BREWING", "TRAY") and provides methods to update or query these states.
+
 public class Order
 {
     private final Object lock = new Object(); //Object lock
     private final String customerName;
-    private final Map<String, String> teas; // Map of <TeaID> <State>
-    private final Map<String, String> coffees; // Map of <CoffeeID> <State>
+
+    // Drinks are in the hashmap to track and change their states
+    private final Map<String, String> teas; // Map of <id> <state>
+    private final Map<String, String> coffees; // Map of <id> <state>
+
+    //Set of atomicintegers to keep track of total number of drinks and total drinks that a ready (for various methods to handle checks and changes)
     private final AtomicInteger totalTeas = new AtomicInteger(0);
     private final AtomicInteger totalCoffees = new AtomicInteger(0);
     private final AtomicInteger readyCount = new AtomicInteger(0);
 
-    public Order(int clientID, String customerName, int teaCount, int coffeeCount)
+    public Order(String customerName, int teaCount, int coffeeCount)
     {
         this.customerName = customerName;
         this.teas = new HashMap<>();
@@ -49,6 +57,8 @@ public class Order
         return customerName;
     }
 
+
+    //When order is complete, notify threads waiting on the lock to proceed (waiting for order to complete)
     public synchronized void markReady()
     {
         if(isReady())
@@ -59,13 +69,15 @@ public class Order
             }
         }
     }
+
+    //Access to the internal lock object
     public Object getLock()
     {
         return lock;
     }
 
 
-    //Methods to add extra to an order
+    //Add extra drinks to the order
     public void AddOnTea(int addNum)
     {
         for (int i = totalTeas.get(); i < totalTeas.get()+addNum; i++)
@@ -119,7 +131,7 @@ public class Order
         return (int) coffees.values().stream().filter(s -> s.equals(state)).count();
     }
 
-    // Retrieve Waiting Drinks
+    // Retrieve waiting drinks
     public String getNextWaitingTea() {
         return teas.entrySet().stream()
                 .filter(entry -> "WAITING".equals(entry.getValue()))

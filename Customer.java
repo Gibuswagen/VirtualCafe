@@ -3,6 +3,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import helpers.CustomerConnection;
+
+// The client-side application for interacting with the Virtual Cafe.
+// Handles user input and leaves communication to the CustomerConnection for clarity
+
 public class Customer{
     private static boolean normalExit = false; // Flag for normal exit
     private static boolean serverAlive = true; // Flag to track server connection status
@@ -30,6 +34,7 @@ public class Customer{
             //Try with resources to connect to the server and start ordering
             try (CustomerConnection customer = new CustomerConnection(name))
             {
+
                 customer.receiveBaristasMessages(() -> serverAlive = false);
 
                 String command = "";
@@ -37,7 +42,7 @@ public class Customer{
                 while(!command.equals("exit") && serverAlive) //Prompt input until exit or server connection is lost
                 {
 
-                    System.out.println("What would you like to do?");
+                    System.out.println("[Barista]: What would you like to do?");
                     //Get command input
                     command = input.nextLine().toLowerCase();
 
@@ -46,10 +51,15 @@ public class Customer{
                     switch(parts[0])
                     {
                         case "order":
-                            if(parts.length > 1 && parts[1].equals("status"))
+                            if(parts.length == 1)
+                            {
+                                System.out.println("[Barista]: Invalid order syntax! use 'order status' or 'order <number> <drink>'");
+                            }
+                            else if(parts[1].equals("status"))
                             {
                                 customer.orderStatus();
-                            }else{
+                            }
+                            else{
                                 Pattern pattern = Pattern.compile("(\\d+)\\s*(tea|teas|coffee|coffees)");
                                 Matcher matcher = pattern.matcher(parts[1]);
 
@@ -69,6 +79,7 @@ public class Customer{
                                 }
 
                                 if (teaCount > 0 || coffeeCount > 0) {
+
                                     // Make CustomerConnection send an order request and get response
                                     customer.placeOrder(teaCount, coffeeCount);
 
@@ -86,7 +97,7 @@ public class Customer{
                             customer.exitCafe();
                             break;
                         default:
-                            System.out.println("Invalid command syntax.");
+                            System.out.println("Invalid command syntax! Try again!");
                             break;
                     }
 
